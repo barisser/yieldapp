@@ -6,49 +6,70 @@ new Vue({
         effectiveYield: '',
         remainingPayments: '',
         price: '',
-        isPrice: true
+    },
+    watch: {
+        unpaidPrincipal() {
+            setTimeout(() => {
+                if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
+                    this.computePrice();
+                }
+            }, 10);
+        },
+        rate() {
+            setTimeout(() => {
+                if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
+                    this.computePrice();
+                }
+            }, 10);
+        },
+        effectiveYield() {
+            setTimeout(() => {
+                if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
+                    this.computePrice();
+                }
+            }, 10);
+        },
+        remainingPayments() {
+            setTimeout(() => {
+                if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
+                    this.computePrice();
+                }
+            }, 10);
+        },
+        // price() {
+        //     setTimeout(() => {
+        //         if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
+        //             this.computeYield();
+        //         }
+        //     }, 1000);
+        // },
     },
     methods: {
-        compute() {
-            if (this.isPrice) {
-                this.computePrice();
-            } else {
-                this.computeYield();
-            }
-        },
         computePrice() {
-            if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
-                this.price = this.note_price(this.unpaidPrincipal, this.rate, this.effectiveYield, this.remainingPayments);
-            }
+            this.price = this.note_price(this.unpaidPrincipal, this.rate, this.effectiveYield, this.remainingPayments);
         },
         computeYield() {
-            if (this.unpaidPrincipal && this.rate && this.price && this.remainingPayments) {
-                this.effectiveYield = this.note_yield(this.price, this.unpaidPrincipal, this.rate, this.remainingPayments);
-            }
+            this.effectiveYield = this.note_yield(this.price, this.unpaidPrincipal, this.rate, this.remainingPayments);
         },
         _func(i, n) {
-            i = i / 100; // Adjust the interest rate to decimal if it's in percentage
-            const i2 = Math.pow(1. + i, 1. / 12.) - 1; // Calculate the monthly interest rate
+            i = i / 100; 
+            const i2 = Math.pow(1. + i, 1. / 12.) - 1;
             return i2 * Math.pow(1. + i2, n) / (Math.pow(1. + i2, n) - 1.);
         },
-
         note_yield(price, unpaid, rate, payments) {
             let tol = 1e-5;
             let total_payment = unpaid * this._func(rate, payments);
             let target = total_payment / price;
             let left = -1, right = 10.;
-
             while (right - left > tol) {
                 let mid = (right + left) / 2;
                 let val = this._func(mid, payments);
-
                 if (val > target) {
                     right = mid;
                 } else {
                     left = mid;
                 }
             }
-
             return (right + left) / 2;
         },
         note_price(unpaid, rate, market_rate, payments) {
@@ -57,7 +78,7 @@ new Vue({
     },
     template: `
         <div class="container">
-            <h1>Note Price and Yield Calculator</h1>
+            <h1>The Yield App</h1>
             <div class="form-group">
                 <label for="unpaidPrincipal">Unpaid Principal:</label>
                 <input type="number" id="unpaidPrincipal" v-model="unpaidPrincipal" class="form-control">
@@ -77,9 +98,6 @@ new Vue({
             <div class="form-group">
                 <label for="price">Price:</label>
                 <input type="number" id="price" v-model="price" class="form-control">
-            </div>
-            <div class="form-group">
-                <button class="btn btn-primary" @click="compute">Compute</button>
             </div>
         </div>
     `
