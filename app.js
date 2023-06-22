@@ -5,63 +5,54 @@ new Vue({
         rate: '',
         effectiveYield: '',
         remainingPayments: '',
-        price: ''
-    },
-    watch: {
-        unpaidPrincipal() {
-            this.computePrice();
-        },
-        rate() {
-            this.computePrice();
-        },
-        effectiveYield() {
-            this.computePrice();
-        },
-        remainingPayments() {
-            this.computePrice();
-        },
-        price() {
-            this.computeYield();
-        },
+        price: '',
+        isPrice: true
     },
     methods: {
+        compute() {
+            if (this.isPrice) {
+                this.computePrice();
+            } else {
+                this.computeYield();
+            }
+        },
         computePrice() {
             if (this.unpaidPrincipal && this.rate && this.effectiveYield && this.remainingPayments) {
-                this.price = this.unpaidPrincipal * this._func(this.rate, this.remainingPayments) / this._func(this.effectiveYield, this.remainingPayments);
+                this.price = this.note_price(this.unpaidPrincipal, this.rate, this.effectiveYield, this.remainingPayments);
             }
         },
         computeYield() {
             if (this.unpaidPrincipal && this.rate && this.price && this.remainingPayments) {
-                const target = this._totalPayment(this.unpaidPrincipal, this.rate, this.remainingPayments) / this.price;
-                const tol = 1e-5;
-                let left = -1, right = 10.;
-
-                while (right - left > tol) {
-                    const mid = right / 2. + left / 2.;
-                    const val = this._iterate(mid, this.remainingPayments);
-
-                    if (val > target) {
-                        right = mid;
-                    } else {
-                        left = mid;
-                    }
-                }
-
-                this.effectiveYield = mid;
+                this.effectiveYield = this.note_yield(this.price, this.unpaidPrincipal, this.rate, this.remainingPayments);
             }
         },
-        _iterate(i, n) {
-            const i2 = Math.pow(1. + i, 1/12.) - 1.;
-            return i2 * Math.pow(1. + i2, n) / (Math.pow(1. + i2, n) - 1.);
-        },
-        _totalPayment(principal, rate, payments) {
-            const per_interval_interest = Math.pow(1. + rate, 1. / 12.) - 1.;
-            const mult = Math.pow(1. + per_interval_interest, payments);
-            return principal * per_interval_interest * mult / (mult - 1);
-        },
         _func(i, n) {
-            const i2 = Math.pow(1. + i, 1/12.) - 1.;
+            i = i / 100; // Adjust the interest rate to decimal if it's in percentage
+            const i2 = Math.pow(1. + i, 1. / 12.) - 1; // Calculate the monthly interest rate
             return i2 * Math.pow(1. + i2, n) / (Math.pow(1. + i2, n) - 1.);
+        },
+
+        note_yield(price, unpaid, rate, payments) {
+            let tol = 1e-5;
+            let total_payment = unpaid * this._func(rate, payments);
+            let target = total_payment / price;
+            let left = -1, right = 10.;
+
+            while (right - left > tol) {
+                let mid = (right + left) / 2;
+                let val = this._func(mid, payments);
+
+                if (val > target) {
+                    right = mid;
+                } else {
+                    left = mid;
+                }
+            }
+
+            return (right + left) / 2;
+        },
+        note_price(unpaid, rate, market_rate, payments) {
+            return unpaid * this._func(rate, payments) / this._func(market_rate, payments);
         }
     },
     template: `
@@ -86,6 +77,9 @@ new Vue({
             <div class="form-group">
                 <label for="price">Price:</label>
                 <input type="number" id="price" v-model="price" class="form-control">
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" @click="compute">Compute</button>
             </div>
         </div>
     `
